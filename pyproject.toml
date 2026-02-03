@@ -1,0 +1,76 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "espsim"
+version = "1.0.0"
+description = "Scoring of shape and ESP similarity with RDKit"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "Esther Heid", email = "eheid@mit.edu"}
+]
+keywords = [
+    "chemistry",
+    "electrostatic potential",
+    "shape",
+    "similarity",
+    "RDKit",
+    "cheminformatics",
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering :: Chemistry",
+]
+requires-python = ">=3.9"
+dependencies = [
+    "numpy>=1.20",
+    "scipy>=1.6",
+    "rdkit>=2025.03"
+]
+
+[project.optional-dependencies]
+# ML charges require chemprop-atom-bond fork
+ml = [
+    "torch>=1.9",
+    "tqdm",
+    "scikit-learn",
+]
+# For development/testing
+dev = [
+    "pytest",
+    "ruff",
+]
+# For Jupyter notebooks in examples
+notebooks = [
+    "jupyter",
+    "py3Dmol",
+]
+
+[project.urls]
+Homepage = "https://github.com/hesther/espsim"
+Documentation = "https://github.com/hesther/espsim#readme"
+Repository = "https://github.com/hesther/espsim"
+Issues = "https://github.com/hesther/espsim/issues"
+
+[tool.setuptools]
+packages = ["espsim"]
+include-package-data = true
+
+[tool.setuptools.package-data]
+espsim = ["QM_137k.pt"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "W"]
+ignore = ["E501"]  # Line too long - handled by formatter

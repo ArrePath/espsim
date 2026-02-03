@@ -33,9 +33,7 @@ requires-python = ">=3.9"
 dependencies = [
     "numpy>=1.20",
     "scipy>=1.6",
-    # rdkit is required but best installed via conda:
-    #   conda install -c conda-forge rdkit
-    # Alternatively, on some platforms: pip install rdkit
+    "rdkit>=2025.03"
 ]
 
 [project.optional-dependencies]

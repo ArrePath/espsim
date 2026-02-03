@@ -1,0 +1,46 @@
+name: Publish To CodeArtifact
+
+on:
+  push:
+    # Run this action on the trigger event when *any* tag is pushed
+    tags:
+      - '*'
+
+jobs:
+
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: us-east-1
+          role-to-assume: arn:aws:iam::104165404940:role/arrepath-github-actions-publish-to-codeartifact
+          role-duration-seconds: 900
+
+      - name: Set Up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Twine
+        run: |
+          pip install build twine
+      - name: Build Package
+        run: |
+          python -m build
+      - name: Publish Package
+        # Below, github.ref_name should be the tag, e.g. "2024.12.18". This ensures that the
+        # tag name matches the version in the package metadata: if it doesn't, the twine upload
+        # command will fail because the filenames here won't exist.
+        run: |
+          aws codeartifact login --tool twine --domain arrepath --repository arrepath &&
+          twine upload --repository codeartifact dist/*-${{ github.ref_name }}-py3-none-any.whl dist/*-${{ github.ref_name }}.tar.gz

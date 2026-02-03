@@ -513,9 +513,15 @@ def EmbedAlignConstrainedScore(
     if not getBestESP:
         for idx, refMol in enumerate(refMols):
             actualRefNumConfs = refMol.GetNumConformers()
+            if actualRefNumConfs == 0:
+                allShapeSim.append(0)
+                allEspSim.append(0)
+                continue
+
             shapeSim = 0
             prbBestConf = 0
             refBestConf = 0
+            foundValidAlignment = False
             refMatch = refMol.GetSubstructMatch(core)
             for i in range(actualRefNumConfs):
                 for j in range(actualPrbNumConfs):
@@ -528,20 +534,35 @@ def EmbedAlignConstrainedScore(
                             refCid=i,
                         )
                         shape = GetShapeSim(prbMol, refMol, j, i)
+                        foundValidAlignment = True
                         if shape > shapeSim:
                             shapeSim = shape
                             prbBestConf = j
                             refBestConf = i
                     except ValueError:
-                        print(f"Failed for Conformers {i} and {j}.")
+                        # Skip conformer pairs with invalid conformer IDs
+                        continue
+
+            # If no valid alignment was found, return zeros for this pair
+            if not foundValidAlignment:
+                allShapeSim.append(0)
+                allEspSim.append(0)
+                continue
+
             # Go back to best alignment
-            AllChem.AlignMol(
-                prbMol,
-                refMol,
-                atomMap=list(zip(prbMatch, refMatch)),
-                prbCid=prbBestConf,
-                refCid=refBestConf,
-            )
+            try:
+                AllChem.AlignMol(
+                    prbMol,
+                    refMol,
+                    atomMap=list(zip(prbMatch, refMatch)),
+                    prbCid=prbBestConf,
+                    refCid=refBestConf,
+                )
+            except ValueError:
+                # If best alignment fails, return zeros for this pair
+                allShapeSim.append(0)
+                allEspSim.append(0)
+                continue
 
             espSim = GetEspSim(
                 prbMol,
@@ -567,6 +588,11 @@ def EmbedAlignConstrainedScore(
     else:
         for idx, refMol in enumerate(refMols):
             actualRefNumConfs = refMol.GetNumConformers()
+            if actualRefNumConfs == 0:
+                allShapeSim.append(0)
+                allEspSim.append(0)
+                continue
+
             espSim = 0
             shapeSim = 0
             refMatch = refMol.GetSubstructMatch(core)
@@ -605,7 +631,8 @@ def EmbedAlignConstrainedScore(
                         if shape > shapeSim:
                             shapeSim = shape
                     except ValueError:
-                        print(f"Failed for Conformers {i} and {j}.")
+                        # Skip conformer pairs with invalid conformer IDs
+                        continue
             allShapeSim.append(shapeSim)
             allEspSim.append(espSim)
 
@@ -693,6 +720,7 @@ def EmbedAlignScore(
             shapeSim = 0
             prbBestConf = 0
             refBestConf = 0
+            foundValidAlignment = False
             refCrippen = rdMolDescriptors._CalcCrippenContribs(refMol)
             for i in range(actualRefNumConfs):
                 for j in range(actualPrbNumConfs):
@@ -702,6 +730,7 @@ def EmbedAlignScore(
                         )
                         alignment.Align()
                         shape = GetShapeSim(prbMol, refMol, j, i)
+                        foundValidAlignment = True
                         if shape > shapeSim:
                             shapeSim = shape
                             prbBestConf = j
@@ -709,6 +738,13 @@ def EmbedAlignScore(
                     except ValueError:
                         # Skip conformer pairs with invalid conformer IDs
                         continue
+
+            # If no valid alignment was found, return zeros for this pair
+            if not foundValidAlignment:
+                allShapeSim.append(0)
+                allEspSim.append(0)
+                continue
+
             # Go back to best alignment
             try:
                 alignment = rdMolAlign.GetCrippenO3A(
@@ -716,8 +752,10 @@ def EmbedAlignScore(
                 )
                 alignment.Align()
             except ValueError:
-                # If best alignment fails, skip this molecule pair
-                pass
+                # If best alignment fails, return zeros for this pair
+                allShapeSim.append(0)
+                allEspSim.append(0)
+                continue
 
             espSim = GetEspSim(
                 prbMol,
